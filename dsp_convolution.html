@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSP Convolution Visualizer - Professional Edition</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/aaaakshat/cm-web-fonts@latest/fonts.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    
+    <style>
+        /* Computer Modern Font (LaTeX) */
+        :root {
+            --font-latex: 'Computer Modern Serif', 'Latin Modern Roman', serif;
+            --primary-color: #1a5490;
+            --secondary-color: #2c7abf;
+            --accent-color: #ff6b35;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --dark-bg: #1a1a2e;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* --- ĐÃ SỬA LẠI ĐOẠN NÀY --- */
+        /* Chỉ áp dụng font LaTeX cho các thành phần văn bản, KHÔNG dùng * để tránh lỗi icon */
+        body, h1, h2, h3, h4, h5, h6, p, span, div, input, button, select, label, td, th {
+            font-family: var(--font-latex) !important;
+        }
+        
+        /* Đảm bảo icon luôn dùng font của nó */
+        .fas, .far, .fab, .fa {
+            font-family: "Font Awesome 5 Free" !important;
+        }
+        /* --------------------------- */
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 30px 0;
+            position: relative;
+        }
+        
+        /* Animated background particles */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+        }
+        
+        /* Header Styling */
+        .main-header-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow-hover);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-header-container::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(26, 84, 144, 0.05) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .header-logo {
+            height: 90px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-icon-fallback {
+            font-size: 80px;
+            color: var(--primary-color);
+            margin-right: 15px;
+        }
+        
+        h1.header-title {
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: var(--primary-color) !important;
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        /* Card Styling */
+        .card {
+            margin-bottom: 25px;
+            border: none;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white !important;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            position: relative;
+        }
+        
+        .card-header::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        }
+        
+        .card-body {
+            padding: 25px;
+        }
+        
+        /* Form Controls */
+        .form-label {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+        }
+        
+        .form-select, .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(44, 122, 191, 0.15);
+        }
+        
+        /* Button Styling */
+        .btn {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 0 4px 6px rgba(26, 84, 144, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(26, 84, 144, 0.4);
+        }
+        
+        .btn-outline-danger {
+            border: 2px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+        
+        .btn-outline-danger:hover {
+            background: var(--danger-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--secondary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-dark {
+            border: 2px solid #333;
+            color: #333;
+        }
+        
+        .btn-outline-dark:hover {
+            background: #333;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            box-shadow: 0 4px 6px rgba(220, 53, 69, 0.3);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(220, 53, 69, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        /* Signal Editor Styling */
+        .signal-editor {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            min-height: 60px;
+            cursor: text;
+            transition: all 0.3s ease;
+        }
+        
+        .signal-editor:focus-within {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(44, 122, 191, 0.15);
+            background: white;
+        }
+        
+        .signal-chip {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid var(--secondary-color);
+            padding: 6px 14px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .signal-chip:hover {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .signal-chip i {
+            font-size: 0.8rem;
+            margin-left: 8px;
+            opacity: 0.7;
+        }
+        
+        .ghost-input {
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            min-width: 100px;
+            font-size: 1.1rem;
+            background: transparent;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .editing-input {
+            width: 70px;
+            padding: 4px 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: 2px solid var(--secondary-color);
+            outline: none;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 0 0 0.2rem rgba(44, 122, 191, 0.15);
+        }
+        
+        /* Control Bar */
+        .control-bar {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Canvas Styling */
+        canvas {
+            max-height: 280px;
+            border-radius: 10px;
+            background: white !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 15px !important;
+        }
+        
+        /* Matrix Styling */
+        .matrix-container {
+            display: flex;
+            align-items: center;
+            font-size: 1.3rem;
+            font-family: var(--font-latex);
+            padding: 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+        }
+        
+        .matrix-wrapper {
+            position: relative;
+            padding: 0 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .matrix-wrapper::before, .matrix-wrapper::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            border: 3px solid var(--primary-color);
+        }
+        
+        .matrix-wrapper::before {
+            left: 0;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+        }
+        
+        .matrix-wrapper::after {
+            right: 0;
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .matrix-table td {
+            padding: 8px 18px;
+            text-align: center;
+            min-width: 50px;
+            font-weight: 500;
+        }
+        
+        .operator {
+            font-size: 2rem;
+            margin: 0 20px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .highlight-val {
+            color: var(--danger-color);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        /* Flip & Slide Controls */
+        .flip-slide-controls {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #dee2e6;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .step-explanation {
+            font-size: 1.1rem;
+            margin-top: 15px;
+            padding: 15px 20px;
+            background: white;
+            border-left: 5px solid var(--secondary-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* Range Slider */
+        .form-range {
+            height: 8px;
+            cursor: pointer;
+        }
+        
+        .form-range::-webkit-slider-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--secondary-color);
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        
+        .form-range::-webkit-slider-thumb:hover {
+            background: var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        /* Badge Styling */
+        .badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        /* OLA Table Styling */
+        .ola-math-container {
+            font-family: var(--font-latex);
+            font-size: 1.1rem;
+            overflow-x: auto;
+            margin-bottom: 30px;
+            background: white;
+            padding: 25px;
+            border: 2px solid #dee2e6;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .ola-calc-table {
+            border-collapse: collapse;
+            margin-top: 20px;
+            width: auto;
+        }
+        
+        .ola-calc-table th,
+        .ola-calc-table td {
+            padding: 10px 18px;
+            text-align: center;
+            border: none;
+        }
+        
+        .ola-calc-table th:first-child,
+        .ola-calc-table td:first-child {
+            border-right: 3px solid var(--primary-color);
+            font-weight: bold;
+            font-style: italic;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .ola-calc-table tr:first-child th {
+            border-bottom: 2px solid var(--primary-color);
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            font-weight: bold;
+        }
+        
+        .ola-sum-row {
+            border-top: 3px solid var(--success-color) !important;
+            font-weight: bold;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+        }
+        
+        .ola-vector-display {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 8px;
+        }
+        
+        /* Math Variables */
+        .math-var {
+            font-style: italic;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        /* Switch Styling */
+        .form-check-input:checked {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        /* Output Title */
+        #outputTitle {
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        /* Result Text */
+        #resultText {
+            font-weight: bold;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe5a0 100%);
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h1.header-title {
+                font-size: 1.8rem;
+            }
+            
+            .header-logo {
+                height: 60px;
+            }
+            
+            .matrix-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .operator {
+                transform: rotate(90deg);
+            }
+        }
+        
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="main-header-container">
+        <img src="logobk.png" alt="Logo Bách Khoa" class="header-logo" onerror="this.style.display='none'; document.getElementById('backup-icon').style.display='inline-block';">
+        <i id="backup-icon" class="fas fa-university header-icon-fallback" style="display:none;"></i>
+
+        <div class="text-center">
+            <h1 class="header-title">
+                <i class="fas fa-wave-square me-2"></i>
+                Mô phỏng Tích chập
+            </h1>
+            <p class="subtitle">Digital Signal Processing - Convolution Visualization Tool</p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-sliders-h me-2"></i>THIẾT LẬP TÍN HIỆU</span>
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" id="chkConnect" style="cursor: pointer;">
+                <label class="form-check-label text-white" for="chkConnect">
+                    <i class="fas fa-bezier-curve me-1"></i>Nối điểm mượt
+                </label>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-signal me-2"></i>1. Tín hiệu vào <span class="math-var">x(n)</span>:
+                    </label>
+                    <div class="signal-editor" id="editorX" onclick="focusInput('inputX_ghost')"></div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-project-diagram me-2"></i>2. Đáp ứng xung <span class="math-var">h(n)</span>:
+                    </label>
+                    <div class="signal-editor" id="editorH" onclick="focusInput('inputH_ghost')"></div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-sm btn-outline-danger" onclick="clearData()">
+                    <i class="fas fa-trash me-1"></i> Xóa hết
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadSampleData()">
+                    <i class="fas fa-random me-1"></i> Mẫu thử
+                </button>
+            </div>
+            
+<div class="control-bar d-flex align-items-center gap-3">
+    <div class="flex-grow-1">
+        <label class="fw-bold mb-2">
+            <i class="fas fa-cogs me-2"></i>Chọn phương pháp trình bày:
+        </label>
+        <select class="form-select border-dark" id="simulationMethod" onchange="updateTheoryLink()">
+            <option value="overview">📊 1. Tổng quan (Đồ thị Input/Output)</option>
+            <option value="matrix">🔢 2. Dạng Ma trận (Matrix Method)</option>
+            <option value="flip">🔄 3. Lật và Trượt (Flip & Slide)</option>
+            <option value="ola">➕ 4. Cộng chồng lấp (Overlap-Add)</option>
+        </select>
+    </div>
+    <div class="d-flex align-items-end gap-2">
+        <a id="btnTheory" href="theory_overview.html" target="_blank" class="btn btn-outline-dark btn-lg" title="Xem bài giảng lý thuyết">
+            <i class="fas fa-book-open"></i>
+        </a>
+        
+        <button onclick="runSimulation()" class="btn btn-primary btn-lg" style="min-width: 180px;">
+            <i class="fas fa-play me-2"></i> Simulation
+        </button>
+    </div>
+</div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="fas fa-chart-line me-2"></i>
+            <span id="outputTitle">KẾT QUẢ MÔ PHỎNG</span>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="simulationTabs">
+                
+                <div class="tab-pane fade show active" id="tab-overview">
+                    <div class="text-center mb-4">
+                        <h3>
+                            <span class="math-var">y(n)</span> = 
+                            <span id="resultText" class="text-danger">[...]</span>
+                        </h3>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header text-center" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                                    <i class="fas fa-arrow-right me-2"></i>Input x(n)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartX"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header text-center" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                                    <i class="fas fa-bolt me-2"></i>Impulse h(n)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartH"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header text-center" style="background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);">
+                                    <i class="fas fa-arrow-left me-2"></i>Output y(n)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartY"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="tab-matrix">
+                    <div id="matrix-output" class="d-flex justify-content-center align-items-center py-4 overflow-auto">
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="tab-flip">
+                    <div class="flip-slide-controls text-center">
+                        <label class="fw-bold mb-3">
+                            <i class="fas fa-exchange-alt me-2"></i>Điều khiển bước trượt (Shift n):
+                        </label>
+                        <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
+                            <button class="btn btn-outline-dark" onclick="changeSlideStep(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <input type="range" class="form-range" id="slideSlider" min="0" max="10" step="1" 
+                                   style="width: 350px;" oninput="updateFlipSlide(this.value)">
+                            <button class="btn btn-outline-dark" onclick="changeSlideStep(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button class="btn btn-danger" id="btnAutoPlay" onclick="toggleAutoPlay()" title="Tự động chạy">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <span class="badge bg-primary fs-5" style="min-width: 70px;">
+                                n = <span id="currentN">0</span>
+                            </span>
+                        </div>
+                        
+                        <div class="step-explanation text-start mx-auto mt-3" style="max-width: 900px;">
+                            <div class="mb-2">
+                                <strong><i class="fas fa-1 me-2"></i>Bước 1:</strong> 
+                                Giữ cố định <span class="math-var">x(k)</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong><i class="fas fa-2 me-2"></i>Bước 2:</strong> 
+                                Lật <span class="math-var">h(k)</span> thành <span class="math-var">h(-k)</span> 
+                                và dịch chuyển đi <span class="math-var">n</span> đơn vị
+                            </div>
+                            <div class="mt-3 fw-bold text-danger">
+                                <i class="fas fa-calculator me-2"></i>
+                                Công thức: y[<span id="mathN">0</span>] = Σ x[k] · h[<span id="mathShift">0</span> - k] = 
+                                <span id="calcDetail">...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header text-center">
+                                    <i class="fas fa-eye me-2"></i>Mô phỏng Trượt (Overlap View)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartFlip" style="max-height: 350px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header text-center">
+                                    <i class="fas fa-check-circle me-2"></i>Kết quả y(n)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartFlipResult" style="max-height: 350px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="tab-ola">
+                    <div class="control-bar mb-4 text-center">
+                        <label class="fw-bold me-3">
+                            <i class="fas fa-cut me-2"></i>Kích thước đoạn chia (Block Size L):
+                        </label>
+                        <input type="number" id="olaBlockSize" class="form-control d-inline-block text-center fw-bold" 
+                               value="3" min="1" max="20" style="width: 90px;" onchange="initOLA()">
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-table me-2"></i>Bảng tính chi tiết (Calculation Table)
+                        </div>
+                        <div class="card-body">
+                            <div id="ola-math-display" class="ola-math-container text-center">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Đang tính toán...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                                    <i class="fas fa-layer-group me-2"></i>Biểu đồ 1: Chia Input x(n)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartOlaInput" style="max-height: 220px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">
+                                    <i class="fas fa-bezier-curve me-2"></i>Biểu đồ 2: Tích chập từng đoạn (Partial Convolutions)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartOlaPartial" style="max-height: 270px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="card h-100">
+                                <div class="card-header" style="background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);">
+                                    <i class="fas fa-check-double me-2"></i>Biểu đồ 3: Kết quả tổng hợp y(n)
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chartOlaFinal" style="max-height: 270px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+   <div class="text-center mt-4 mb-3" style="color: rgba(255,255,255,0.9);">
+    <p class="mb-1">
+        <i class="fas fa-code me-2"></i>
+        Developed by Nguyễn Thanh Phong, Nguyễn Hoàng Đức Huy, Nguyễn Hoàng Tuấn
+    </p>
+    <p class="small" style="opacity: 0.8;">
+        <i class="fas fa-graduation-cap me-1"></i>
+        Digital Signal Processing Visualization Tool | Powered by Computer Modern & Bootstrap 5
+    </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dữ liệu khởi tạo
+    let dataX = [1, 1, 2, 1, 2, 2, 1, 1];
+    let dataH = [1, 2, -1, 1];
+    let editState = { type: null, index: -1 };
+    let chartX_Instance = null;
+    let chartH_Instance = null;
+    let chartY_Instance = null;
+    
+    // --- 1. RENDER CHIPS (CÓ LOGIC SỬA TẠI CHỖ) ---
+    function renderChips(type) {
+        const editorId = type === 'x' ? 'editorX' : 'editorH';
+        const inputId = type === 'x' ? 'inputX_ghost' : 'inputH_ghost';
+        const data = type === 'x' ? dataX : dataH;
+        const editor = document.getElementById(editorId);
+        
+        let html = '';
+        data.forEach((val, index) => {
+            if (editState.type === type && editState.index === index) {
+                html += `<input type="number" class="editing-input" 
+                                value="${val}" 
+                                id="editing_${type}_${index}"
+                                onkeydown="handleEditKey(event, '${type}', ${index})" 
+                                onblur="finishEdit('${type}', ${index})">`;
+            } else {
+                html += `<span class="signal-chip" onclick="startEdit('${type}', ${index})">
+                            ${val}
+                         </span>`;
+            }
+        });
+        html += `<input type="text" class="ghost-input" id="${inputId}" 
+                        placeholder="Nhập số..." 
+                        autocomplete="off"
+                        onkeydown="handleNewKey(event, '${type}')" 
+                        onblur="handleNewBlur('${type}')">`;
+        
+        editor.innerHTML = html;
+        if (editState.type === type && editState.index !== -1) {
+            setTimeout(() => {
+                const editInput = document.getElementById(`editing_${type}_${editState.index}`);
+                if (editInput) editInput.focus();
+            }, 0);
+        }
+    }
+    
+    function startEdit(type, index) {
+        editState = { type: type, index: index };
+        renderChips(type);
+    }
+    
+    function finishEdit(type, index) {
+        if (editState.type !== type || editState.index !== index) return;
+        const inputEl = document.getElementById(`editing_${type}_${index}`);
+        if (inputEl) {
+            const newVal = parseFloat(inputEl.value);
+            const data = type === 'x' ? dataX : dataH;
+            
+            if (!isNaN(newVal)) {
+                data[index] = newVal;
+            } else {
+                data.splice(index, 1);
+            }
+        }
+        editState = { type: null, index: -1 };
+        renderChips(type);
+        updateAll();
+    }
+    
+    function handleEditKey(event, type, index) {
+        if (event.key === 'Enter') {
+            const inputEl = document.getElementById(`editing_${type}_${index}`);
+            if (inputEl) inputEl.blur();
+        }
+    }
+    
+    function handleNewKey(event, type) {
+        const input = event.target;
+        const valRaw = input.value.trim();
+        const data = type === 'x' ? dataX : dataH;
+        if (event.key === 'Enter' || event.key === ' ' || event.key === ',') {
+            event.preventDefault();
+            if (valRaw !== '' && !isNaN(valRaw)) {
+                data.push(Number(valRaw));
+                input.value = '';
+                renderChips(type);
+                updateAll();
+                setTimeout(() => {
+                    const ghostInput = document.getElementById(type === 'x' ? 'inputX_ghost' : 'inputH_ghost');
+                    if (ghostInput) ghostInput.focus();
+                }, 10);
+            }
+        }
+        
+        if (event.key === 'Backspace' && valRaw === '') {
+            if (data.length > 0) {
+                data.pop();
+                renderChips(type);
+                updateAll();
+                setTimeout(() => {
+                    const ghostInput = document.getElementById(type === 'x' ? 'inputX_ghost' : 'inputH_ghost');
+                    if (ghostInput) ghostInput.focus();
+                }, 10);
+            }
+        }
+    }
+    
+    function handleNewBlur(type) {
+        const inputId = type === 'x' ? 'inputX_ghost' : 'inputH_ghost';
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        
+        const valRaw = input.value.trim();
+        const data = type === 'x' ? dataX : dataH;
+        if (valRaw !== '' && !isNaN(valRaw)) {
+            data.push(Number(valRaw));
+            renderChips(type);
+            updateAll();
+        }
+    }
+    
+    function focusInput(inputId) {
+        if (editState.index === -1) {
+            const el = document.getElementById(inputId);
+            if(el) el.focus();
+        }
+    }
+    
+    function updateAll() {
+        const x = [...dataX];
+        const h = [...dataH];
+        if (x.length === 0) x.push(0);
+        if (h.length === 0) h.push(0);
+        const isSmooth = document.getElementById('chkConnect').checked;
+        const y = convolutionCore(x, h);
+        
+        // Cải thiện hiển thị text kết quả với Font LaTeX
+        document.getElementById('resultText').innerHTML = `[ ${y.join(', ')} ]`;
+        
+        drawChart('chartX', x, 'x(n)', '#0d6efd', chartX_Instance, (c) => chartX_Instance = c, isSmooth);
+        drawChart('chartH', h, 'h(n)', '#198754', chartH_Instance, (c) => chartH_Instance = c, isSmooth);
+        drawChart('chartY', y, 'y(n)', '#dc3545', chartY_Instance, (c) => chartY_Instance = c, isSmooth);
+    }
+    
+    function convolutionCore(x, h) {
+        const L = x.length; 
+        const M = h.length; 
+        const Ly = L + M - 1; 
+        let y = new Array(Ly).fill(0);
+        for (let n = 0; n < Ly; n++) {
+            for (let k = 0; k < L; k++) {
+                if (n - k >= 0 && n - k < M) y[n] += x[k] * h[n - k];
+            }
+        }
+        return y;
+    }
+    
+    function hexToRgba(hex, alpha) {
+        let c;
+        if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+            c= hex.substring(1).split('');
+            if(c.length== 3){
+                c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+            }
+            c= '0x'+c.join('');
+            return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+        }
+        return hex; 
+    }
+    
+    function drawChart(canvasId, dataArray, label, colorHex, chartInstance, setChartInstance, isSmooth) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const labels = dataArray.map((_, index) => index);
+        
+        if (chartInstance) chartInstance.destroy();
+        
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        try {
+            gradient.addColorStop(0, hexToRgba(colorHex, 0.4));
+            gradient.addColorStop(1, hexToRgba(colorHex, 0.05));
+        } catch(e) {
+            gradient = colorHex; 
+        }
+        
+        Chart.defaults.font.family = "Computer Modern Serif";
+        Chart.defaults.font.size = 13;
+        Chart.defaults.color = '#333';
+        
+        const newChart = new Chart(ctx, {
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: label,
+                        data: dataArray,
+                        showLine: isSmooth,
+                        tension: 0.4, 
+                        cubicInterpolationMode: 'monotone',
+                        borderColor: colorHex,
+                        borderWidth: 2.5,
+                        backgroundColor: gradient, 
+                        fill: isSmooth ? 'start' : false,
+                        pointRadius: isSmooth ? 3 : 5,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: colorHex,
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: colorHex,
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 3,
+                        order: 1 
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Stem',
+                        data: dataArray,
+                        backgroundColor: hexToRgba(colorHex, 0.7),
+                        barThickness: 2, 
+                        borderRadius: 2,
+                        hidden: isSmooth, 
+                        grouped: false,
+                        order: 2,
+                        hoverBackgroundColor: colorHex 
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart',
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: false,
+                        suggestedMin: -0.5,
+                        suggestedMax: 1.5,
+                        title: { display: true, text: 'Amplitude', font: { weight: 'bold', style: 'italic' } },
+                        grid: {
+                            color: (context) => {
+                                if (context.tick.value === 0) return '#000'; 
+                                return '#f0f0f0'; 
+                            },
+                            borderDash: (context) => {
+                                if (context.tick.value === 0) return []; 
+                                return [4, 4];
+                            },
+                            lineWidth: (context) => {
+                                if (context.tick.value === 0) return 1.5;
+                                return 1;
+                            }
+                        },
+                        ticks: { color: '#555' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Sample (n)', font: { weight: 'bold', style: 'italic' } },
+                        grid: { 
+                            display: false,
+                            borderColor: '#000'
+                        },
+                        ticks: { color: '#555' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 14 },
+                        padding: 10,
+                        cornerRadius: 4,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Value: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        setChartInstance(newChart);
+    }
+    
+
+function updateTheoryLink() {
+        const method = document.getElementById('simulationMethod').value;
+        const btnTheory = document.getElementById('btnTheory');
+        
+        // CẬP NHẬT ĐƯỜNG DẪN MỚI TẠI ĐÂY
+        switch(method) {
+            case 'overview':
+                btnTheory.href = 'theory.html#overview'; // Nhảy đến mục 1
+                break;
+            case 'matrix':
+                btnTheory.href = 'theory.html#matrix';   // Nhảy đến mục 2
+                break;
+            case 'flip':
+                btnTheory.href = 'theory.html#flip';     // Nhảy đến mục 3
+                break;
+            case 'ola':
+                btnTheory.href = 'theory.html#ola';      // Nhảy đến mục 4
+                break;
+            default:
+                btnTheory.href = 'theory.html';
+        }
+    }
+
+
+    function runSimulation() {
+        updateAll(); 
+        const method = document.getElementById('simulationMethod').value;
+        const outputTitle = document.getElementById('outputTitle');
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('show', 'active'));
+        
+        if (method === 'overview') {
+            document.getElementById('tab-overview').classList.add('show', 'active');
+            outputTitle.innerHTML = '<i class="fas fa-chart-area me-2"></i>KẾT QUẢ: TỔNG QUAN ĐỒ THỊ';
+        } 
+        else if (method === 'matrix') {
+            document.getElementById('tab-matrix').classList.add('show', 'active');
+            outputTitle.innerHTML = '<i class="fas fa-th me-2"></i>PHƯƠNG PHÁP: TÍCH CHẬP MA TRẬN';
+            renderMatrixMode();
+        } 
+        else if (method === 'flip') {
+            document.getElementById('tab-flip').classList.add('show', 'active');
+            outputTitle.innerHTML = '<i class="fas fa-sync-alt me-2"></i>PHƯƠNG PHÁP: LẬT VÀ TRƯỢT';
+            setTimeout(initFlipSlide, 100);
+        } 
+        else if (method === 'ola') {
+            document.getElementById('tab-ola').classList.add('show', 'active');
+            outputTitle.innerHTML = '<i class="fas fa-layer-group me-2"></i>PHƯƠNG PHÁP: CỘNG CHỒNG LẤP';
+            setTimeout(initOLA, 100);    
+        }
+    }
+    
+    function renderMatrixMode() {
+        const x = [...dataX];
+        const h = [...dataH];
+        const L = x.length;
+        const M = h.length;
+        const N = L + M - 1;
+        
+        let htmlH = '<table class="matrix-table">';
+        for (let n = 0; n < N; n++) {
+            htmlH += '<tr>';
+            for (let k = 0; k < L; k++) {
+                let val = 0;
+                if (n - k >= 0 && n - k < M) {
+                    val = h[n - k];
+                }
+                let colorClass = val === 0 ? 'text-muted opacity-25' : '';
+                htmlH += `<td class="${colorClass}">${val}</td>`;
+            }
+            htmlH += '</tr>';
+        }
+        htmlH += '</table>';
+        
+        let htmlX = '<table class="matrix-table">';
+        for (let k = 0; k < L; k++) {
+            htmlX += `<tr><td>${x[k]}</td></tr>`;
+        }
+        htmlX += '</table>';
+        
+        const y = convolutionCore(x, h);
+        let htmlY = '<table class="matrix-table">';
+        for (let n = 0; n < N; n++) {
+            htmlY += `<tr><td class="highlight-val">${y[n]}</td></tr>`;
+        }
+        htmlY += '</table>';
+        
+        const finalHTML = `
+            <div class="matrix-container">
+                <div class="text-center me-3">
+                    <div class="mb-2 fw-bold text-muted">Ma trận Toeplitz H</div>
+                    <div class="matrix-wrapper">${htmlH}</div>
+                </div>
+                <div class="operator">×</div>
+                <div class="text-center me-3">
+                    <div class="mb-2 fw-bold text-muted">Vector x</div>
+                    <div class="matrix-wrapper">${htmlX}</div>
+                </div>
+                <div class="operator">=</div>
+                <div class="text-center">
+                    <div class="mb-2 fw-bold text-muted">Output y</div>
+                    <div class="matrix-wrapper">${htmlY}</div>
+                </div>
+            </div>
+        `;
+        document.getElementById('matrix-output').innerHTML = finalHTML;
+    }
+    
+    let chartFlip_Instance = null;
+    let chartFlipResult_Instance = null;
+    
+    function initFlipSlide() {
+        const x = dataX;
+        const h = dataH;
+        const N = x.length + h.length - 1;
+        const slider = document.getElementById('slideSlider');
+        slider.max = N - 1;
+        slider.value = 0;
+        updateFlipSlide(0);
+    }
+    
+    function changeSlideStep(delta) {
+        const slider = document.getElementById('slideSlider');
+        let newVal = parseInt(slider.value) + delta;
+        if (newVal >= 0 && newVal <= slider.max) {
+            slider.value = newVal;
+            updateFlipSlide(newVal);
+        }
+    }
+    
+    function updateFlipSlide(nVal) {
+        const n = parseInt(nVal);
+        const x = dataX;
+        const h = dataH;
+        const L = x.length;
+        const M = h.length;
+        
+        document.getElementById('currentN').innerText = n;
+        document.getElementById('mathN').innerText = n;
+        document.getElementById('mathShift').innerText = n;
+        
+        const minK = Math.min(0, n - (M - 1)) - 1;
+        const maxK = Math.max(L - 1, n) + 1;
+        
+        const labelsK = [];
+        const dataX_plot = [];
+        const dataH_shifted = [];
+        const dataProduct = [];
+        let sum = 0;
+        let explanationText = "";
+        
+        for (let k = minK; k <= maxK; k++) {
+            labelsK.push(k);
+            const valX = (k >= 0 && k < L) ? x[k] : 0;
+            dataX_plot.push(valX);
+            const idx_h = n - k;
+            const valH = (idx_h >= 0 && idx_h < M) ? h[idx_h] : 0;
+            dataH_shifted.push(valH);
+            const prod = valX * valH;
+            dataProduct.push(prod);
+            if (prod !== 0) {
+                sum += prod;
+                explanationText += `(${valX} × ${valH}) + `;
+            }
+        }
+        
+        explanationText = explanationText.slice(0, -3) || "0";
+        document.getElementById('calcDetail').innerHTML = `${explanationText} = <b>${sum}</b>`;
+        
+        const ctxFlip = document.getElementById('chartFlip').getContext('2d');
+        if (chartFlip_Instance) chartFlip_Instance.destroy();
+        
+        Chart.defaults.font.family = "Computer Modern Serif";
+        
+        chartFlip_Instance = new Chart(ctxFlip, {
+            data: {
+                labels: labelsK,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'x(k)',
+                        data: dataX_plot,
+                        backgroundColor: 'rgba(13, 110, 253, 0.3)',
+                        borderColor: '#0d6efd',
+                        borderWidth: 1,
+                        barThickness: 10,
+                        order: 2
+                    },
+                    {
+                        type: 'line',
+                        label: `h(${n}-k)`,
+                        data: dataH_shifted,
+                        borderColor: '#198754',
+                        borderDash: [5, 5],
+                        pointRadius: 4,
+                        pointBackgroundColor: '#198754',
+                        fill: false,
+                        tension: 0,
+                        order: 1
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Vùng trùng',
+                        data: dataProduct,
+                        backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                        barThickness: 15,
+                        order: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true, 
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#eee' } },
+                    x: { grid: { color: '#eee' } }
+                },
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        const fullY = convolutionCore(x, h);
+        const currentYData = fullY.map((val, idx) => (idx <= n) ? val : null);
+        const pointColors = fullY.map((_, idx) => (idx === n) ? 'red' : '#0d6efd');
+        const pointRadiuses = fullY.map((_, idx) => (idx === n) ? 6 : 3);
+        
+        const ctxRes = document.getElementById('chartFlipResult').getContext('2d');
+        if (chartFlipResult_Instance) chartFlipResult_Instance.destroy();
+        chartFlipResult_Instance = new Chart(ctxRes, {
+            type: 'line',
+            data: {
+                labels: fullY.map((_, i) => i),
+                datasets: [{
+                    label: 'y(n)',
+                    data: currentYData,
+                    borderColor: '#0d6efd',
+                    tension: 0.2,
+                    pointBackgroundColor: pointColors,
+                    pointRadius: pointRadiuses,
+                    pointBorderColor: pointColors,
+                    fill: false,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true, 
+                maintainAspectRatio: false, 
+                animation: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#eee' } },
+                    x: { grid: { color: '#eee' } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+    
+    function clearData() {
+        dataX = [];
+        dataH = [];
+        renderChips('x');
+        renderChips('h');
+        updateAll();
+    }
+    
+function loadSampleData() {
+        // Tạo hàm random số nguyên từ min đến max
+        const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        // Random x(n): 8 phần tử, giá trị từ -2 đến 5
+        dataX = Array.from({length: 8}, () => randomInt(-2, 5));
+        
+        // Random h(n): 4 phần tử, giá trị từ -2 đến 5
+        dataH = Array.from({length: 4}, () => randomInt(-2, 5));
+        
+        // Render lại giao diện
+        renderChips('x');
+        renderChips('h');
+        updateAll();
+    }
+    
+    let autoPlayInterval = null;
+    
+    function toggleAutoPlay() {
+        const btn = document.getElementById('btnAutoPlay');
+        const icon = btn.querySelector('i');
+        const slider = document.getElementById('slideSlider');
+        
+        if (autoPlayInterval) {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = null;
+            icon.className = 'fas fa-play';
+            btn.classList.replace('btn-secondary', 'btn-danger');
+        } else {
+            icon.className = 'fas fa-pause';
+            btn.classList.replace('btn-danger', 'btn-secondary');
+            autoPlayInterval = setInterval(() => {
+                let currentVal = parseInt(slider.value);
+                let maxVal = parseInt(slider.max);
+                let nextVal = currentVal + 1;
+                if (nextVal > maxVal) nextVal = 0;
+                slider.value = nextVal;
+                updateFlipSlide(nextVal);
+            }, 800);
+        }
+    }
+    
+    let chartOlaInput_Instance = null;
+    let chartOlaPartial_Instance = null;
+    let chartOlaFinal_Instance = null;
+    const OLA_COLORS = ['#0d6efd', '#dc3545', '#ffc107', '#6f42c1', '#20c997', '#fd7e14'];
+    
+    function renderOLATable(x, h, L) {
+        const M = h.length;
+        const totalLen = x.length + M - 1; 
+        let vectorHTML = '';
+        let tableRowsHTML = '';
+        let headerRow = '<tr><th>n</th>';
+        for(let i=0; i<totalLen; i++) headerRow += `<th>${i}</th>`;
+        headerRow += '</tr>';
+        let finalY = new Array(totalLen).fill(0);
+        let blockCount = 0;
+        for (let i = 0; i < x.length; i += L) {
+            const x_block = x.slice(i, i + L);
+            const y_block = convolutionCore(x_block, h);
+            vectorHTML += `<div class="ola-vector-display text-start mb-1">
+                <span class="math-var fw-bold" style="color: ${OLA_COLORS[blockCount % OLA_COLORS.length]}">y<sub>${blockCount}</sub></span> = 
+                h * [${x_block.join(', ')}] = 
+                [${y_block.join(', ')}]
+            </div>`;
+            let rowHTML = `<tr><td><span class="math-var fw-bold" style="color: ${OLA_COLORS[blockCount % OLA_COLORS.length]}">y<sub>${blockCount}</sub></span></td>`;
+            for (let k = 0; k < totalLen; k++) {
+                if (k >= i && k < i + y_block.length) {
+                    const val = y_block[k - i];
+                    rowHTML += `<td>${val}</td>`;
+                    finalY[k] += val;
+                } else {
+                    rowHTML += `<td></td>`;
+                }
+            }
+            rowHTML += '</tr>';
+            tableRowsHTML += rowHTML;
+            blockCount++;
+        }
+        let sumRow = `<tr class="ola-sum-row"><td><span class="math-var">y</span></td>`;
+        for(let val of finalY) {
+            sumRow += `<td>${val}</td>`;
+        }
+        sumRow += '</tr>';
+        const fullHTML = `
+            <div class="d-inline-block text-start" style="min-width: 100%;">
+                <div class="mb-3 ps-3 border-start border-4 border-primary bg-light p-2 rounded">
+                    ${vectorHTML}
+                </div>
+                <table class="ola-calc-table mx-auto">
+                    ${headerRow}
+                    ${tableRowsHTML}
+                    ${sumRow}
+                </table>
+            </div>
+        `;
+        const displayDiv = document.getElementById('ola-math-display');
+        if (displayDiv) displayDiv.innerHTML = fullHTML;
+    }
+    
+    function initOLA() {
+        const x = dataX;
+        const h = dataH;
+        let L = parseInt(document.getElementById('olaBlockSize').value);
+        if (!L || L < 1) L = 1;
+        renderOLATable(x, h, L); 
+        const inputColors = [];
+        const xLabels = x.map((_, i) => i);
+        for (let i = 0; i < x.length; i++) {
+            inputColors.push(OLA_COLORS[Math.floor(i / L) % OLA_COLORS.length]);
+        }
+        drawOlaInputChart(xLabels, x, inputColors);
+        const M = h.length;
+        const totalLen = x.length + M - 1;
+        const partialDatasets = [];
+        const finalY = new Array(totalLen).fill(0);
+        let blockC = 0;
+        for (let i = 0; i < x.length; i += L) {
+            const x_b = x.slice(i, i + L);
+            const y_b = convolutionCore(x_b, h);
+            const plotData = new Array(totalLen).fill(null);
+            for (let k = 0; k < y_b.length; k++) {
+                if(i+k < totalLen) {
+                    plotData[i+k] = y_b[k];
+                    finalY[i+k] += y_b[k];
+                }
+            }
+            const color = OLA_COLORS[blockC % OLA_COLORS.length];
+            partialDatasets.push({
+                label: `y${blockC}`, 
+                data: plotData,
+                borderColor: color, 
+                backgroundColor: color,
+                tension: 0.2, 
+                pointRadius: 3, 
+                spanGaps: false,
+                borderWidth: 2
+            });
+            blockC++;
+        }
+        drawOlaPartialChart(totalLen, partialDatasets);
+        drawOlaFinalChart(finalY);
+    }
+    
+    function drawOlaInputChart(labels, data, colors) {
+        const ctx = document.getElementById('chartOlaInput').getContext('2d');
+        if (chartOlaInput_Instance) chartOlaInput_Instance.destroy();
+        
+        Chart.defaults.font.family = "Computer Modern Serif";
+        
+        chartOlaInput_Instance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'x(n)', 
+                    data: data, 
+                    backgroundColor: colors, 
+                    borderColor: '#000', 
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    x: { title: {display: true, text: 'n'} }, 
+                    y: { beginAtZero: true } 
+                }
+            }
+        });
+    }
+    
+    function drawOlaPartialChart(totalLen, datasets) {
+        const ctx = document.getElementById('chartOlaPartial').getContext('2d');
+        if (chartOlaPartial_Instance) chartOlaPartial_Instance.destroy();
+        const labels = Array.from({length: totalLen}, (_, i) => i);
+        
+        Chart.defaults.font.family = "Computer Modern Serif";
+        
+        chartOlaPartial_Instance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'right' } },
+                scales: { 
+                    x: { title: {display: true, text: 'n'} }, 
+                    y: { beginAtZero: true } 
+                }
+            }
+        });
+    }
+    
+    function drawOlaFinalChart(data) {
+        const ctx = document.getElementById('chartOlaFinal').getContext('2d');
+        if (chartOlaFinal_Instance) chartOlaFinal_Instance.destroy();
+        const labels = data.map((_, i) => i);
+        
+        Chart.defaults.font.family = "Computer Modern Serif";
+        
+        chartOlaFinal_Instance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'line', 
+                        label: 'y(n)', 
+                        data: data,
+                        borderColor: '#198754', 
+                        backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                        fill: true, 
+                        tension: 0.4, 
+                        borderWidth: 2, 
+                        pointRadius: 4
+                    },
+                    {
+                        type: 'bar', 
+                        label: 'Stem', 
+                        data: data,
+                        backgroundColor: '#198754', 
+                        barThickness: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: '#eee' } }, 
+                    x: { grid: { display: false } } 
+                }
+            }
+        });
+    }
+    
+    document.fonts.ready.then(function () {
+        renderChips('x'); 
+        renderChips('h'); 
+        updateAll();
+    });
+</script>
+</body>
+</html>

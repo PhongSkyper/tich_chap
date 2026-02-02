@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lý thuyết Tích chập - DSP Theory</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/aaaakshat/cm-web-fonts@latest/fonts.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    
+    <style>
+        :root { --font-latex: 'Computer Modern Serif', serif; --primary: #1a5490; --sec: #2c7abf; }
+        body, p, h1, h2, h3, li, td, th { font-family: var(--font-latex) !important; }
+        .fas, .far { font-family: "Font Awesome 5 Free" !important; }
+        
+        body { background: #f8f9fa; padding: 30px 0; }
+        .theory-section { 
+            background: white; border-radius: 15px; padding: 40px; margin-bottom: 40px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--primary);
+        }
+        .sec-title { color: var(--primary); font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        .back-btn { position: fixed; bottom: 30px; right: 30px; z-index: 999; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.3s; }
+        .back-btn:hover { transform: scale(1.1); }
+        .math-box { background: #eef5ff; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; border: 1px dashed var(--sec); font-size: 1.2rem; }
+        .note-box { background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107; margin-top: 15px; }
+        .img-sim { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 900px;">
+    <div class="text-center mb-5">
+        <img src="logobk.png" alt="Logo BK" style="height: 80px; margin-bottom: 15px;" onerror="this.style.display='none'">
+        <h1 class="fw-bold text-uppercase" style="color: var(--primary);">
+            <i class="fas fa-book-reader me-2"></i>Cơ sở lý thuyết Tích chập
+        </h1>
+        <p class="text-muted fst-italic">Biên soạn dựa trên Silde bài giảng Chương 4, môn Xử lý Tín hiệu Số - ĐH Bách Khoa TPHCM, thầy Nguyễn Thanh Tuấn</p>
+    </div>
+
+    <div id="overview" class="theory-section">
+        <h2 class="sec-title"><i class="fas fa-info-circle me-2"></i>1. Định nghĩa Tích chập </h2>
+        <p>Trong hệ thống rời rạc tuyến tính bất biến (LTI), mối quan hệ giữa tín hiệu ngõ vào $x(n)$ và đáp ứng xung $h(n)$ được mô tả bằng tổng tích chập:</p>
+        
+        <div class="math-box">
+            $$ y(n) = \sum_{m} h(m)x(n-m) = h(n) * x(n) $$
+        </div>
+
+        <p><strong>Các thông số quan trọng:</strong></p>
+        <ul>
+            <li>Giả sử $x(n)$ có chiều dài $L$.</li>
+            <li>Hệ thống FIR có đáp ứng xung $h(n)$ chiều dài $M$ (bậc $M-1$).</li>
+            <li>Chiều dài tín hiệu ngõ ra $y(n)$ được xác định bởi công thức:</li>
+        </ul>
+        <div class="text-center fw-bold text-primary mb-3">
+            $$ L_y = L + M - 1 $$
+        </div>
+        <p>Chỉ số thời gian $n$ của ngõ ra chạy trong khoảng $0 \le n \le M + L - 1$.</p>
+    </div>
+
+    <div id="matrix" class="theory-section">
+        <h2 class="sec-title"><i class="fas fa-th me-2"></i>2. Phương pháp Ma trận</h2>
+        <p>Tích chập có thể được biểu diễn dưới dạng phép nhân giữa một ma trận và một vector:</p>
+        
+        <div class="math-box">
+            $$ \mathbf{y} = \mathbf{H} \times \mathbf{x} $$
+        </div>
+
+        <p><strong>Cách xây dựng Ma trận H:</strong></p>
+        <p>Ma trận $\mathbf{H}$ được xây dựng từ các phần tử của đáp ứng xung $h(n)$ theo dạng <em>Toeplitz</em> (các phần tử trên đường chéo giống nhau). Cấu trúc như sau:</p>
+        <ul>
+            <li>Cột đầu tiên là vector $h$ có thêm các số 0 để đủ chiều dài.</li>
+            <li>Các cột tiếp theo là phiên bản dịch xuống (shift down) của cột trước đó.</li>
+            <li>Kích thước ma trận $\mathbf{H}$ là $(L+M-1) \times L$.</li>
+        </ul>
+        
+        <p>Minh họa cấu trúc như sau:</p>
+        $$ 
+        \begin{bmatrix} y_0 \\ y_1 \\ y_2 \\ \vdots \end{bmatrix} = 
+        \begin{bmatrix} 
+        h_0 & 0 & 0 \\ 
+        h_1 & h_0 & 0 \\ 
+        h_2 & h_1 & h_0 \\ 
+        \vdots & \vdots & \vdots 
+        \end{bmatrix} 
+        \times 
+        \begin{bmatrix} x_0 \\ x_1 \\ x_2 \end{bmatrix} 
+        $$
+    </div>
+
+    <div id="flip" class="theory-section">
+        <h2 class="sec-title"><i class="fas fa-sync-alt me-2"></i>3. Phương pháp Lật và Trượt</h2>
+        <p>Đây là phương pháp trực quan mô tả bản chất của công thức $y(n) = \sum_{k} x(k)h(n-k)$. Quá trình thực hiện gồm các bước:</p>
+        
+        <ol>
+            <li><strong>Cố định:</strong> Giữ nguyên tín hiệu đầu vào $x(k)$.</li>
+            <li><strong>Lật (Flip):</strong> Lật đáp ứng xung $h(k)$ qua trục tung để tạo thành $h(-k)$.</li>
+            <li><strong>Trượt (Slide):</strong> Dịch chuyển $h(-k)$ đi một lượng $n$ đơn vị để tạo thành $h(n-k)$.</li>
+            <li><strong>Nhân và Cộng:</strong> Tại mỗi điểm dịch $n$, nhân các mẫu tương ứng của $x(k)$ và $h(n-k)$ rồi cộng lại để được giá trị $y(n)$.</li>
+        </ol>
+
+        <div class="note-box">
+            <strong><i class="fas fa-exclamation-triangle me-2"></i>Các giai đoạn của quá trình lọc:</strong>
+            <ul>
+                <li><strong>Trạng thái quá độ (Transient):</strong> Khi $h(n)$ chưa trượt hoàn toàn vào trong $x(n)$ (giai đoạn đầu và cuối).</li>
+                <li><strong>Trạng thái xác lập (Steady state):</strong> Khi toàn bộ các hệ số của $h(n)$ đều tham gia vào phép tính nhân với $x(n)$.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="ola" class="theory-section">
+        <h2 class="sec-title"><i class="fas fa-layer-group me-2"></i>4. Phương pháp Cộng chồng lấp (Overlap-Add)</h2>
+        <p>Khi tín hiệu ngõ vào $x(n)$ có chiều dài rất lớn, ta không thể tính tích chập trực tiếp một lần. Phương pháp này chia nhỏ tín hiệu để xử lý từng khối</i>.</p>
+        
+        <p><strong>Quy trình thực hiện:</strong></p>
+        <ol>
+            <li><strong>Chia khối:</strong> Chia tín hiệu $x(n)$ thành các khối nhỏ không chồng lấp, mỗi khối có kích thước $L$.
+                $$ x(n) = \{ \underbrace{x_0}_{\text{block 0}}, \underbrace{x_1}_{\text{block 1}}, \underbrace{x_2}_{\text{block 2}}, \dots \} $$
+            </li>
+            <li><strong>Tích chập từng khối:</strong> Tính tích chập riêng lẻ cho từng khối với $h(n)$.
+                $$ y_r(n) = x_r(n) * h(n) $$
+                Lưu ý: Chiều dài của mỗi khối ngõ ra $y_r$ sẽ là $L + M - 1$.
+            </li>
+            <li><strong>Cộng chồng lấp:</strong> Kết quả cuối cùng $y(n)$ được tạo bằng cách cộng phần "đuôi" dư ra (chiều dài $M-1$) của khối trước với phần "đầu" của khối sau.</li>
+        </ol>
+        
+        <div class="text-center mt-3">
+            <button class="btn btn-outline-primary btn-sm" disabled>
+                <i class="fas fa-eye me-2"></i>Xem minh họa trực quan tại tab "Cộng chồng lấp"
+            </button>
+        </div>
+    </div>
+
+    <div class="text-center mt-5 mb-5 pb-5 text-muted border-top pt-4">
+        <p class="mb-1">
+        <i class="fas fa-code me-2"></i>
+        Developed by Nguyễn Thanh Phong, Nguyễn Hoàng Đức Huy, Nguyễn Hoàng Tuấn
+    </p>
+      
+    </div>
+</div>
+
+<a href="index.html" class="btn btn-primary back-btn text-white" title="Quay lại Mô phỏng">
+    <i class="fas fa-calculator fa-lg"></i>
+</a>
+
+</body>
+</html>
